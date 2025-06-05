@@ -3,11 +3,13 @@ export interface Task {
   title: string;
   description?: string;
   createdAt: Date;
+  updatedAt?: Date;
+  deletedAt?: Date;
 }
 
 export const tasksDatabase: Task[] = [
   {
-    id: "1",
+    id: "c4dcf27b-b9ff-4a0e-8e28-de339c2b8121",
     title: "Tarefa de exemplo",
     description: "Esta é uma tarefa de exemplo para demonstração",
     createdAt: new Date(),
@@ -15,5 +17,5 @@ export const tasksDatabase: Task[] = [
 ];
 
 export const generateId = (): string => {
-  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  return crypto.randomUUID();
 };

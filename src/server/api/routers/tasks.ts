@@ -9,13 +9,13 @@ const createTaskSchema = z.object({
 });
 
 const updateTaskSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   title: z.string().min(1, "Título é obrigatório"),
   description: z.string().optional(),
 });
 
 export const tasksRouter = createTRPCRouter({
-  getAll: publicProcedure
+  getTasks: publicProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(10),
@@ -24,16 +24,19 @@ export const tasksRouter = createTRPCRouter({
     )
     .query(({ input }) => {
       const { limit, cursor } = input;
-      const paginatedTasks = tasksDatabase
+
+      const activeTasks = tasksDatabase.filter((t) => !t.deletedAt);
+
+      const paginatedTasks = activeTasks
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(cursor, cursor + limit);
 
       const nextCursor =
-        cursor + limit < tasksDatabase.length ? cursor + limit : null;
+        cursor + limit < activeTasks.length ? cursor + limit : null;
 
       return {
         tasks: paginatedTasks,
-        total: tasksDatabase.length,
+        total: activeTasks.length,
         nextCursor,
       };
     }),
@@ -77,6 +80,7 @@ export const tasksRouter = createTRPCRouter({
       ...tasksDatabase[taskIndex],
       title: input.title,
       description: input.description,
+      updatedAt: new Date(),
     };
 
     return tasksDatabase[taskIndex];
@@ -85,16 +89,16 @@ export const tasksRouter = createTRPCRouter({
   delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(({ input }) => {
-      const taskIndex = tasksDatabase.findIndex((t) => t.id === input.id);
+      const task = tasksDatabase.find((t) => t.id === input.id);
 
-      if (taskIndex === -1) {
+      if (!task) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tarefa não encontrada para exclusão",
         });
       }
 
-      const deletedTask = tasksDatabase.splice(taskIndex, 1)[0];
-      return deletedTask;
+      task.deletedAt = new Date();
+      return task;
     }),
 });

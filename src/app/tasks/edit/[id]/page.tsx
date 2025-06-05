@@ -1,12 +1,11 @@
 import TaskForm from "../../TaskForm";
 
-interface EditTaskPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function EditTaskPage({ params }: EditTaskPageProps) {
+export default async function EditTaskPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
@@ -16,7 +15,7 @@ export default function EditTaskPage({ params }: EditTaskPageProps) {
         </p>
       </div>
 
-      <TaskForm taskId={params.id} />
+      <TaskForm taskId={id} />
     </div>
   );
 }

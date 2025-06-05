@@ -18,7 +18,7 @@ export default function TaskList() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = api.tasks.getAll.useInfiniteQuery(
+  } = api.tasks.getTasks.useInfiniteQuery(
     { limit: 10 },
     {
       getNextPageParam: (lastPage) => {
@@ -52,7 +52,7 @@ export default function TaskList() {
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
-  const debounceFetch = useCallback((fetchFn: () => void, delay = 2000) => {
+  const debounceFetch = useCallback((fetchFn: () => void, delay = 1000) => {
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       fetchFn();
@@ -144,10 +144,17 @@ export default function TaskList() {
                     <p className="text-gray-600 mb-3">{task.description}</p>
                   )}
                   <p className="text-sm text-gray-500">
-                    Criado em:{" "}
+                    Criada em:{" "}
                     {new Date(task.createdAt).toLocaleDateString("pt-BR")} às{" "}
                     {new Date(task.createdAt).toLocaleTimeString("pt-BR")}
                   </p>
+                  {task.updatedAt ? (
+                    <p className="text-sm text-gray-500">
+                      Atualizada em:{" "}
+                      {new Date(task.updatedAt).toLocaleDateString("pt-BR")} às{" "}
+                      {new Date(task.updatedAt).toLocaleTimeString("pt-BR")}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex space-x-2 ml-4">
                   <Link
