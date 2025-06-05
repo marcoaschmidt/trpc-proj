@@ -1,0 +1,100 @@
+import { z } from "zod";
+import { createTRPCRouter, publicProcedure } from "../trpc";
+import { tasksDatabase, generateId, type Task } from "../../db";
+import { TRPCError } from "@trpc/server";
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório"),
+  description: z.string().optional(),
+});
+
+const updateTaskSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, "Título é obrigatório"),
+  description: z.string().optional(),
+});
+
+export const tasksRouter = createTRPCRouter({
+  getAll: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(10),
+        cursor: z.number().min(0).default(0),
+      })
+    )
+    .query(({ input }) => {
+      const { limit, cursor } = input;
+      const paginatedTasks = tasksDatabase
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(cursor, cursor + limit);
+
+      const nextCursor =
+        cursor + limit < tasksDatabase.length ? cursor + limit : null;
+
+      return {
+        tasks: paginatedTasks,
+        total: tasksDatabase.length,
+        nextCursor,
+      };
+    }),
+
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) => {
+      const task = tasksDatabase.find((t) => t.id === input.id);
+      if (!task) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tarefa não encontrada",
+        });
+      }
+      return task;
+    }),
+
+  create: publicProcedure.input(createTaskSchema).mutation(({ input }) => {
+    const newTask: Task = {
+      id: generateId(),
+      title: input.title,
+      description: input.description,
+      createdAt: new Date(),
+    };
+
+    tasksDatabase.push(newTask);
+    return newTask;
+  }),
+
+  update: publicProcedure.input(updateTaskSchema).mutation(({ input }) => {
+    const taskIndex = tasksDatabase.findIndex((t) => t.id === input.id);
+
+    if (taskIndex === -1) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Tarefa não encontrada para atualização",
+      });
+    }
+
+    tasksDatabase[taskIndex] = {
+      ...tasksDatabase[taskIndex],
+      title: input.title,
+      description: input.description,
+    };
+
+    return tasksDatabase[taskIndex];
+  }),
+
+  delete: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      const taskIndex = tasksDatabase.findIndex((t) => t.id === input.id);
+
+      if (taskIndex === -1) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tarefa não encontrada para exclusão",
+        });
+      }
+
+      const deletedTask = tasksDatabase.splice(taskIndex, 1)[0];
+      return deletedTask;
+    }),
+});
