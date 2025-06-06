@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { tasksDatabase, generateId, type Task } from "../../db";
 import { TRPCError } from "@trpc/server";
+import { generateId, Task, tasksDatabase } from "@/server/db";
 
 const createTaskSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
@@ -15,7 +15,7 @@ const updateTaskSchema = z.object({
 });
 
 export const tasksRouter = createTRPCRouter({
-  getTasks: publicProcedure
+  getAll: publicProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(10),
@@ -42,9 +42,10 @@ export const tasksRouter = createTRPCRouter({
     }),
 
   getById: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(({ input }) => {
-      const task = tasksDatabase.find((t) => t.id === input.id);
+      const task = tasksDatabase.find((t) => t.id === input.id && !t.deletedAt);
+
       if (!task) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -60,8 +61,9 @@ export const tasksRouter = createTRPCRouter({
       title: input.title,
       description: input.description,
       createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
     };
-
     tasksDatabase.push(newTask);
     return newTask;
   }),
