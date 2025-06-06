@@ -37,8 +37,14 @@ export default function TaskForm({ taskId }: TaskFormProps) {
     resolver: zodResolver(taskSchema),
   });
 
-  const { data: existingTask, isLoading: isLoadingTask } =
-    api.tasks.getById.useQuery({ id: taskId! }, { enabled: isEditing });
+  const {
+    data: existingTask,
+    isLoading: isLoadingTask,
+    isError,
+  } = api.tasks.getById.useQuery(
+    { id: taskId! },
+    { enabled: isEditing, retry: 1, refetchOnWindowFocus: false }
+  );
 
   const { mutate: createTask } = api.tasks.create.useMutation({
     onSuccess: () => {
@@ -89,6 +95,14 @@ export default function TaskForm({ taskId }: TaskFormProps) {
       createTask(data);
     }
   };
+
+  if (isError) {
+    return (
+      <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+        Nenhuma tarefa encontrada
+      </div>
+    );
+  }
 
   if (isEditing && isLoadingTask) {
     return (

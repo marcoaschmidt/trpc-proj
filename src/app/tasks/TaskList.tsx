@@ -18,7 +18,7 @@ export default function TaskList() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = api.tasks.getTasks.useInfiniteQuery(
+  } = api.tasks.getAll.useInfiniteQuery(
     { limit: 10 },
     {
       getNextPageParam: (lastPage) => {
