@@ -99,11 +99,6 @@ npm install
 npx tsc --noEmit
 ```
 
-### **Problemas com tRPC**
-
-- Verificar se todos os tipos estão sendo exportados corretamente
-- Confirmar se o servidor está rodando na porta correta
-
 ---
 
 **Desenvolvido usando NextJS 15 + tRPC**
